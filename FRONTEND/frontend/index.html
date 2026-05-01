@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lost and Found</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <h1>Lost and Found</h1>
+    <p>Post and search lost or found items on campus.</p>
+  </header>
+
+  <main class="container">
+    <section class="status-panel" id="userPanel">
+      <p id="userMessage">You are not logged in.</p>
+      <button class="secondary-btn hidden" id="logoutBtn" type="button">Logout</button>
+    </section>
+
+    <section class="auth-grid" id="authSection">
+      <form class="panel" id="signupForm">
+        <h2>Create Account</h2>
+
+        <label for="signupName">Name</label>
+        <input id="signupName" type="text" placeholder="Your name" required>
+
+        <label for="signupEmail">Email</label>
+        <input id="signupEmail" type="email" placeholder="you@example.com" required>
+
+        <label for="signupPhone">Phone</label>
+        <input id="signupPhone" type="text" placeholder="9999999999" required>
+
+        <label for="signupPassword">Password</label>
+        <input id="signupPassword" type="password" placeholder="Minimum 6 characters" required>
+
+        <button type="submit">Sign Up</button>
+        <p class="form-message" id="signupMessage"></p>
+      </form>
+
+      <form class="panel" id="loginForm">
+        <h2>Login</h2>
+
+        <label for="loginEmail">Email</label>
+        <input id="loginEmail" type="email" placeholder="you@example.com" required>
+
+        <label for="loginPassword">Password</label>
+        <input id="loginPassword" type="password" placeholder="Your password" required>
+
+        <button type="submit">Login</button>
+        <p class="form-message" id="loginMessage"></p>
+      </form>
+    </section>
+
+    <section class="main-grid">
+      <form class="panel" id="itemForm">
+        <h2>Post Item</h2>
+
+        <label for="itemTitle">Title</label>
+        <input id="itemTitle" type="text" placeholder="Black wallet" required>
+
+        <label for="itemDescription">Description</label>
+        <textarea id="itemDescription" placeholder="Add important details" required></textarea>
+
+        <label for="itemCategory">Category</label>
+        <input id="itemCategory" type="text" placeholder="Electronics, Books, Accessories" required>
+
+        <label for="itemLocation">Location</label>
+        <input id="itemLocation" type="text" placeholder="Library, Lab, Canteen" required>
+
+        <label for="itemStatus">Status</label>
+        <select id="itemStatus" required>
+          <option value="lost">Lost</option>
+          <option value="found">Found</option>
+        </select>
+
+        <label for="itemDate">Date</label>
+        <input id="itemDate" type="date" required>
+
+        <button type="submit">Post Item</button>
+        <p class="form-message" id="itemMessage"></p>
+      </form>
+
+      <section class="panel">
+        <h2>Search Items</h2>
+
+        <form class="filters" id="filterForm">
+          <input id="searchInput" type="text" placeholder="Search title, description, location">
+
+          <select id="statusFilter">
+            <option value="">All statuses</option>
+            <option value="lost">Lost</option>
+            <option value="found">Found</option>
+          </select>
+
+          <select id="resolvedFilter">
+            <option value="">All progress</option>
+            <option value="false">Active</option>
+            <option value="true">Resolved</option>
+          </select>
+
+          <input id="categoryFilter" type="text" placeholder="Category">
+
+          <button type="submit">Search</button>
+        </form>
+
+        <div class="items-list" id="itemsList"></div>
+      </section>
+    </section>
+
+    <section class="panel my-posts-panel hidden" id="myPostsSection">
+      <div class="section-title-row">
+        <h2>My Posts</h2>
+        <button class="secondary-btn small-btn" id="refreshMyPostsBtn" type="button">Refresh</button>
+      </div>
+      <div class="items-list" id="myItemsList"></div>
+    </section>
+  </main>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
