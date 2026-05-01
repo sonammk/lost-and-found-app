@@ -11,6 +11,9 @@ const itemMessage = document.getElementById("itemMessage");
 const filterForm = document.getElementById("filterForm");
 const itemsList = document.getElementById("itemsList");
 const authSection = document.getElementById("authSection");
+const appSection = document.getElementById("appSection");
+const appNavLink = document.getElementById("appNavLink");
+const heroActions = document.getElementById("heroActions");
 const myPostsSection = document.getElementById("myPostsSection");
 const myItemsList = document.getElementById("myItemsList");
 const refreshMyPostsBtn = document.getElementById("refreshMyPostsBtn");
@@ -61,11 +64,19 @@ const updateUserPanel = () => {
     userMessage.textContent = `Logged in as ${user.name} (${user.email})`;
     logoutBtn.classList.remove("hidden");
     authSection.classList.add("hidden");
+    appSection.classList.remove("hidden");
+    appNavLink.classList.remove("hidden");
+    heroActions.classList.remove("hidden");
     myPostsSection.classList.remove("hidden");
+    loadItems();
+    loadMyItems();
   } else {
     userMessage.textContent = "You are not logged in.";
     logoutBtn.classList.add("hidden");
     authSection.classList.remove("hidden");
+    appSection.classList.add("hidden");
+    appNavLink.classList.add("hidden");
+    heroActions.classList.add("hidden");
     myPostsSection.classList.add("hidden");
   }
 };
@@ -141,6 +152,7 @@ logoutBtn.addEventListener("click", () => {
   localStorage.removeItem("user");
   updateUserPanel();
   myItemsList.innerHTML = "";
+  itemsList.innerHTML = "";
 });
 
 itemForm.addEventListener("submit", async (event) => {
@@ -385,6 +397,4 @@ const loadItems = async () => {
   
   setMaxItemDate();
   updateUserPanel();
-  loadItems();
-  loadMyItems();
   

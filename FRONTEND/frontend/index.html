@@ -8,8 +8,19 @@
 </head>
 <body>
   <header class="site-header">
-    <h1>Lost and Found</h1>
-    <p>Post and search lost or found items on campus.</p>
+    <nav class="topbar">
+      <div class="brand">Lost and Found</div>
+      <a class="hidden" id="appNavLink" href="#itemForm">Post Item</a>
+    </nav>
+    <div class="hero-content">
+      <p class="eyebrow">Campus recovery desk</p>
+      <h1>Find what is lost. Return what is found.</h1>
+      <p>Post lost or found items, search recent reports, and contact the right person quickly.</p>
+      <div class="hero-actions hidden" id="heroActions">
+        <a class="hero-btn primary-link" href="#itemForm">Post an Item</a>
+        <a class="hero-btn secondary-link" href="#filterForm">Search Items</a>
+      </div>
+    </div>
   </header>
 
   <main class="container">
@@ -52,7 +63,7 @@
       </form>
     </section>
 
-    <section class="main-grid">
+    <section class="main-grid hidden" id="appSection">
       <form class="panel" id="itemForm">
         <h2>Post Item</h2>
 
