@@ -50,6 +50,10 @@ const isFutureDate = (dateValue) => {
   return dateValue > getTodayDateString();
 };
 
+const isValidPhone = (phone) => {
+  return /^[0-9]{10}$/.test(phone);
+};
+
 const saveLogin = (data) => {
   localStorage.setItem("token", data.token);
   localStorage.setItem("user", JSON.stringify(data.user));
@@ -90,6 +94,11 @@ signupForm.addEventListener("submit", async (event) => {
     phone: document.getElementById("signupPhone").value,
     password: document.getElementById("signupPassword").value
   };
+
+  if (!isValidPhone(userData.phone)) {
+    showMessage(signupMessage, "Phone number must be exactly 10 digits", "error");
+    return;
+  }
 
   try {
     const response = await fetch(`${API_BASE_URL}/auth/signup`, {

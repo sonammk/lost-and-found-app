@@ -15,7 +15,7 @@ Users can:
 ## Tech Stack
 
 - Backend: Node.js, Express.js
-- Database: MongoDB with Mongoose
+- Database: SQLite SQL database
 - Authentication: JWT and bcryptjs
 - Frontend: HTML, CSS, JavaScript
 

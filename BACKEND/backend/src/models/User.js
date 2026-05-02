@@ -1,32 +1,9 @@
-const mongoose = require("mongoose");
+// SQL version: users are stored in the `users` table created in config/db.js.
+// This file is kept so the project structure remains easy to understand.
 
-const userSchema = new mongoose.Schema(
-  {
-    name: {
-      type: String,
-      required: true,
-      trim: true
-    },
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-      lowercase: true,
-      trim: true
-    },
-    password: {
-      type: String,
-      required: true
-    },
-    phone: {
-      type: String,
-      required: true,
-      trim: true
-    }
-  },
-  {
-    timestamps: true
-  }
-);
+const userTable = {
+  tableName: "users",
+  columns: ["id", "name", "email", "password", "phone", "created_at", "updated_at"]
+};
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = userTable;

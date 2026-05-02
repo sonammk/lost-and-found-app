@@ -13,3 +13,7 @@ npm-debug.log*
 # OS/editor files
 .DS_Store
 .vscode/
+
+# Local SQLite database
+*.sqlite
+*.sqlite-journal

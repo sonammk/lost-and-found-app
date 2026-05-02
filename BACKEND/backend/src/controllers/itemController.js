@@ -1,4 +1,36 @@
-const Item = require("../models/Item");
+const { db } = require("../config/db");
+
+const formatItem = (row) => ({
+  _id: row.id,
+  id: row.id,
+  title: row.title,
+  description: row.description,
+  category: row.category,
+  location: row.location,
+  status: row.status,
+  date: row.date,
+  isResolved: Boolean(row.is_resolved),
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+  postedBy: {
+    _id: row.user_id,
+    id: row.user_id,
+    name: row.user_name,
+    email: row.user_email,
+    phone: row.user_phone
+  }
+});
+
+const itemSelect = `
+SELECT
+  items.*,
+  users.id AS user_id,
+  users.name AS user_name,
+  users.email AS user_email,
+  users.phone AS user_phone
+FROM items
+JOIN users ON users.id = items.posted_by
+`;
 
 const createItem = async (req, res) => {
   try {
@@ -8,33 +40,44 @@ const createItem = async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    const itemDate = new Date(date);
+    if (!["lost", "found"].includes(status)) {
+      return res.status(400).json({ message: "Status must be lost or found" });
+    }
 
-    if (Number.isNaN(itemDate.getTime())) {
+    const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+
+    if (!datePattern.test(date)) {
       return res.status(400).json({ message: "Please enter a valid date" });
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    itemDate.setHours(0, 0, 0, 0);
+    const today = new Date().toLocaleDateString("en-CA");
 
-    if (itemDate > today) {
+    if (date > today) {
       return res.status(400).json({ message: "Date cannot be in the future" });
     }
 
-    const item = await Item.create({
-      title,
-      description,
-      category,
-      location,
-      status,
-      date: itemDate,
-      postedBy: req.user._id
-    });
+    const result = db
+      .prepare(`
+        INSERT INTO items (title, description, category, location, status, date, posted_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `)
+      .run(
+        title.trim(),
+        description.trim(),
+        category.trim(),
+        location.trim(),
+        status,
+        date,
+        req.user.id
+      );
+
+    const row = db
+      .prepare(`${itemSelect} WHERE items.id = ?`)
+      .get(Number(result.lastInsertRowid));
 
     res.status(201).json({
       message: "Item posted successfully",
-      item
+      item: formatItem(row)
     });
   } catch (error) {
     res.status(500).json({ message: "Item creation failed", error: error.message });
@@ -44,37 +87,39 @@ const createItem = async (req, res) => {
 const getItems = async (req, res) => {
   try {
     const { search, status, category, resolved } = req.query;
-    const filter = {};
+    const conditions = [];
+    const values = [];
 
     if (status) {
-      filter.status = status;
+      conditions.push("items.status = ?");
+      values.push(status);
     }
 
     if (category) {
-      filter.category = category;
+      conditions.push("LOWER(items.category) = LOWER(?)");
+      values.push(category);
     }
 
     if (resolved === "true") {
-      filter.isResolved = true;
+      conditions.push("items.is_resolved = 1");
     }
 
     if (resolved === "false") {
-      filter.isResolved = false;
+      conditions.push("items.is_resolved = 0");
     }
 
     if (search) {
-      filter.$or = [
-        { title: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } },
-        { location: { $regex: search, $options: "i" } }
-      ];
+      conditions.push("(items.title LIKE ? OR items.description LIKE ? OR items.location LIKE ?)");
+      const searchValue = `%${search}%`;
+      values.push(searchValue, searchValue, searchValue);
     }
 
-    const items = await Item.find(filter)
-      .populate("postedBy", "name email phone")
-      .sort({ createdAt: -1 });
+    const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+    const rows = db
+      .prepare(`${itemSelect} ${whereClause} ORDER BY items.created_at DESC`)
+      .all(...values);
 
-    res.json(items);
+    res.json(rows.map(formatItem));
   } catch (error) {
     res.status(500).json({ message: "Could not fetch items", error: error.message });
   }
@@ -82,11 +127,11 @@ const getItems = async (req, res) => {
 
 const getMyItems = async (req, res) => {
   try {
-    const items = await Item.find({ postedBy: req.user._id })
-      .populate("postedBy", "name email phone")
-      .sort({ createdAt: -1 });
+    const rows = db
+      .prepare(`${itemSelect} WHERE items.posted_by = ? ORDER BY items.created_at DESC`)
+      .all(req.user.id);
 
-    res.json(items);
+    res.json(rows.map(formatItem));
   } catch (error) {
     res.status(500).json({ message: "Could not fetch your items", error: error.message });
   }
@@ -94,17 +139,17 @@ const getMyItems = async (req, res) => {
 
 const deleteItem = async (req, res) => {
   try {
-    const item = await Item.findById(req.params.id);
+    const item = db.prepare("SELECT * FROM items WHERE id = ?").get(req.params.id);
 
     if (!item) {
       return res.status(404).json({ message: "Item not found" });
     }
 
-    if (item.postedBy.toString() !== req.user._id.toString()) {
+    if (item.posted_by !== req.user.id) {
       return res.status(403).json({ message: "You can delete only your own posts" });
     }
 
-    await item.deleteOne();
+    db.prepare("DELETE FROM items WHERE id = ?").run(req.params.id);
 
     res.json({ message: "Item deleted successfully" });
   } catch (error) {
@@ -114,24 +159,26 @@ const deleteItem = async (req, res) => {
 
 const toggleResolved = async (req, res) => {
   try {
-    const item = await Item.findById(req.params.id);
+    const item = db.prepare("SELECT * FROM items WHERE id = ?").get(req.params.id);
 
     if (!item) {
       return res.status(404).json({ message: "Item not found" });
     }
 
-    if (item.postedBy.toString() !== req.user._id.toString()) {
+    if (item.posted_by !== req.user.id) {
       return res.status(403).json({ message: "You can update only your own posts" });
     }
 
-    item.isResolved = !item.isResolved;
-    await item.save();
+    const nextResolved = item.is_resolved ? 0 : 1;
+    db
+      .prepare("UPDATE items SET is_resolved = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+      .run(nextResolved, req.params.id);
 
-    const updatedItem = await Item.findById(item._id).populate("postedBy", "name email phone");
+    const row = db.prepare(`${itemSelect} WHERE items.id = ?`).get(req.params.id);
 
     res.json({
-      message: item.isResolved ? "Item marked as resolved" : "Item marked as active",
-      item: updatedItem
+      message: nextResolved ? "Item marked as resolved" : "Item marked as active",
+      item: formatItem(row)
     });
   } catch (error) {
     res.status(500).json({ message: "Could not update item", error: error.message });

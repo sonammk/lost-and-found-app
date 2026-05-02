@@ -1,49 +1,21 @@
-const mongoose = require("mongoose");
+// SQL version: items are stored in the `items` table created in config/db.js.
+// Each item has a foreign key `posted_by` that points to users.id.
 
-const itemSchema = new mongoose.Schema(
-  {
-    title: {
-      type: String,
-      required: true,
-      trim: true
-    },
-    description: {
-      type: String,
-      required: true,
-      trim: true
-    },
-    category: {
-      type: String,
-      required: true,
-      trim: true
-    },
-    location: {
-      type: String,
-      required: true,
-      trim: true
-    },
-    status: {
-      type: String,
-      required: true,
-      enum: ["lost", "found"]
-    },
-    date: {
-      type: Date,
-      required: true
-    },
-    isResolved: {
-      type: Boolean,
-      default: false
-    },
-    postedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true
-    }
-  },
-  {
-    timestamps: true
-  }
-);
+const itemTable = {
+  tableName: "items",
+  columns: [
+    "id",
+    "title",
+    "description",
+    "category",
+    "location",
+    "status",
+    "date",
+    "is_resolved",
+    "posted_by",
+    "created_at",
+    "updated_at"
+  ]
+};
 
-module.exports = mongoose.model("Item", itemSchema);
+module.exports = itemTable;
