@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:5050/api";
+const API_BASE_URL = "/api";
 
 const signupForm = document.getElementById("signupForm");
 const loginForm = document.getElementById("loginForm");
