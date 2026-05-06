@@ -1,39 +1,45 @@
-const path = require("path");
-const { DatabaseSync } = require("node:sqlite");
+const mysql = require("mysql2/promise");
 
-const dbPath = process.env.SQLITE_DB_PATH || path.join(__dirname, "../../lost_found.sqlite");
-const db = new DatabaseSync(dbPath);
+const db = mysql.createPool({
+  host: process.env.DB_HOST || "localhost",
+  user: process.env.DB_USER || "root",
+  password: process.env.DB_PASSWORD || "",
+  database: process.env.DB_NAME || "lost_and_found",
+  waitForConnections: true,
+  connectionLimit: 10
+});
 
-const connectDB = () => {
-  db.exec("PRAGMA foreign_keys = ON;");
-  db.exec(`
-CREATE TABLE IF NOT EXISTS users (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT NOT NULL,
-  email TEXT NOT NULL UNIQUE,
-  password TEXT NOT NULL,
-  phone TEXT NOT NULL,
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS items (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  title TEXT NOT NULL,
-  description TEXT NOT NULL,
-  category TEXT NOT NULL,
-  location TEXT NOT NULL,
-  status TEXT NOT NULL CHECK(status IN ('lost', 'found')),
-  date TEXT NOT NULL,
-  is_resolved INTEGER DEFAULT 0,
-  posted_by INTEGER NOT NULL,
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (posted_by) REFERENCES users(id) ON DELETE CASCADE
-);
+const connectDB = async () => {
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(100) NOT NULL,
+      email VARCHAR(150) NOT NULL UNIQUE,
+      password VARCHAR(255) NOT NULL,
+      phone VARCHAR(10) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )
   `);
 
-  console.log("SQLite database connected");
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS items (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      title VARCHAR(150) NOT NULL,
+      description TEXT NOT NULL,
+      category VARCHAR(100) NOT NULL,
+      location VARCHAR(150) NOT NULL,
+      status ENUM('lost', 'found') NOT NULL,
+      date DATE NOT NULL,
+      is_resolved BOOLEAN DEFAULT FALSE,
+      posted_by INT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (posted_by) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
+  console.log("MySQL database connected");
 };
 
 module.exports = {

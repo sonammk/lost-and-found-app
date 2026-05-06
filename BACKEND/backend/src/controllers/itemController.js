@@ -8,7 +8,7 @@ const formatItem = (row) => ({
   category: row.category,
   location: row.location,
   status: row.status,
-  date: row.date,
+  date: row.date instanceof Date ? row.date.toISOString().split("T")[0] : row.date,
   isResolved: Boolean(row.is_resolved),
   createdAt: row.created_at,
   updatedAt: row.updated_at,
@@ -56,12 +56,12 @@ const createItem = async (req, res) => {
       return res.status(400).json({ message: "Date cannot be in the future" });
     }
 
-    const result = db
-      .prepare(`
+    const [result] = await db.execute(
+      `
         INSERT INTO items (title, description, category, location, status, date, posted_by)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-      `)
-      .run(
+      `,
+      [
         title.trim(),
         description.trim(),
         category.trim(),
@@ -69,11 +69,11 @@ const createItem = async (req, res) => {
         status,
         date,
         req.user.id
-      );
+      ]
+    );
 
-    const row = db
-      .prepare(`${itemSelect} WHERE items.id = ?`)
-      .get(Number(result.lastInsertRowid));
+    const [rows] = await db.execute(`${itemSelect} WHERE items.id = ?`, [result.insertId]);
+    const row = rows[0];
 
     res.status(201).json({
       message: "Item posted successfully",
@@ -115,9 +115,10 @@ const getItems = async (req, res) => {
     }
 
     const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
-    const rows = db
-      .prepare(`${itemSelect} ${whereClause} ORDER BY items.created_at DESC`)
-      .all(...values);
+    const [rows] = await db.execute(
+      `${itemSelect} ${whereClause} ORDER BY items.created_at DESC`,
+      values
+    );
 
     res.json(rows.map(formatItem));
   } catch (error) {
@@ -127,9 +128,10 @@ const getItems = async (req, res) => {
 
 const getMyItems = async (req, res) => {
   try {
-    const rows = db
-      .prepare(`${itemSelect} WHERE items.posted_by = ? ORDER BY items.created_at DESC`)
-      .all(req.user.id);
+    const [rows] = await db.execute(
+      `${itemSelect} WHERE items.posted_by = ? ORDER BY items.created_at DESC`,
+      [req.user.id]
+    );
 
     res.json(rows.map(formatItem));
   } catch (error) {
@@ -139,7 +141,8 @@ const getMyItems = async (req, res) => {
 
 const deleteItem = async (req, res) => {
   try {
-    const item = db.prepare("SELECT * FROM items WHERE id = ?").get(req.params.id);
+    const [items] = await db.execute("SELECT * FROM items WHERE id = ?", [req.params.id]);
+    const item = items[0];
 
     if (!item) {
       return res.status(404).json({ message: "Item not found" });
@@ -149,7 +152,7 @@ const deleteItem = async (req, res) => {
       return res.status(403).json({ message: "You can delete only your own posts" });
     }
 
-    db.prepare("DELETE FROM items WHERE id = ?").run(req.params.id);
+    await db.execute("DELETE FROM items WHERE id = ?", [req.params.id]);
 
     res.json({ message: "Item deleted successfully" });
   } catch (error) {
@@ -159,7 +162,8 @@ const deleteItem = async (req, res) => {
 
 const toggleResolved = async (req, res) => {
   try {
-    const item = db.prepare("SELECT * FROM items WHERE id = ?").get(req.params.id);
+    const [items] = await db.execute("SELECT * FROM items WHERE id = ?", [req.params.id]);
+    const item = items[0];
 
     if (!item) {
       return res.status(404).json({ message: "Item not found" });
@@ -170,11 +174,13 @@ const toggleResolved = async (req, res) => {
     }
 
     const nextResolved = item.is_resolved ? 0 : 1;
-    db
-      .prepare("UPDATE items SET is_resolved = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
-      .run(nextResolved, req.params.id);
+    await db.execute("UPDATE items SET is_resolved = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", [
+      nextResolved,
+      req.params.id
+    ]);
 
-    const row = db.prepare(`${itemSelect} WHERE items.id = ?`).get(req.params.id);
+    const [rows] = await db.execute(`${itemSelect} WHERE items.id = ?`, [req.params.id]);
+    const row = rows[0];
 
     res.json({
       message: nextResolved ? "Item marked as resolved" : "Item marked as active",

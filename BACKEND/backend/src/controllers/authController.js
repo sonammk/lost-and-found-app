@@ -34,20 +34,22 @@ const signup = async (req, res) => {
     }
 
     const cleanEmail = email.toLowerCase().trim();
-    const existingUser = db.prepare("SELECT id FROM users WHERE email = ?").get(cleanEmail);
+    const [existingUsers] = await db.execute("SELECT id FROM users WHERE email = ?", [cleanEmail]);
 
-    if (existingUser) {
+    if (existingUsers.length > 0) {
       return res.status(400).json({ message: "Email already registered" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const result = db
-      .prepare("INSERT INTO users (name, email, password, phone) VALUES (?, ?, ?, ?)")
-      .run(name.trim(), cleanEmail, hashedPassword, cleanPhone);
+    const [result] = await db.execute(
+      "INSERT INTO users (name, email, password, phone) VALUES (?, ?, ?, ?)",
+      [name.trim(), cleanEmail, hashedPassword, cleanPhone]
+    );
 
-    const user = db
-      .prepare("SELECT id, name, email, phone FROM users WHERE id = ?")
-      .get(Number(result.lastInsertRowid));
+    const [users] = await db.execute("SELECT id, name, email, phone FROM users WHERE id = ?", [
+      result.insertId
+    ]);
+    const user = users[0];
 
     const token = createToken(user.id);
 
@@ -70,7 +72,8 @@ const login = async (req, res) => {
     }
 
     const cleanEmail = email.toLowerCase().trim();
-    const user = db.prepare("SELECT * FROM users WHERE email = ?").get(cleanEmail);
+    const [users] = await db.execute("SELECT * FROM users WHERE email = ?", [cleanEmail]);
+    const user = users[0];
 
     if (!user) {
       return res.status(400).json({ message: "Invalid email or password" });
