@@ -1,4 +1,4 @@
-const API_BASE_URL = "/api";
+const API_BASE_URL = "https://lost-and-found-app-480e.onrender.com/api";
 
 const signupForm = document.getElementById("signupForm");
 const loginForm = document.getElementById("loginForm");
@@ -223,148 +223,148 @@ refreshMyPostsBtn.addEventListener("click", () => {
   loadMyItems();
 });
 const loadItems = async () => {
-    const search = document.getElementById("searchInput").value;
-    const status = document.getElementById("statusFilter").value;
-    const resolved = document.getElementById("resolvedFilter").value;
-    const category = document.getElementById("categoryFilter").value;
-    const params = new URLSearchParams();
-  
-    if (search) {
-      params.append("search", search);
-    }
-  
-    if (status) {
-      params.append("status", status);
-    }
-  
-    if (resolved) {
-      params.append("resolved", resolved);
-    }
-  
-    if (category) {
-      params.append("category", category);
-    }
-  
-    try {
-      const response = await fetch(`${API_BASE_URL}/items?${params.toString()}`);
-      const items = await response.json();
-  
-      if (!response.ok) {
-        itemsList.innerHTML = `<p class="empty-text">${items.message || "Could not load items"}</p>`;
-        return;
-      }
-  
-      renderItems(items);
-    } catch (error) {
-      itemsList.innerHTML = '<p class="empty-text">Cannot connect to server</p>';
-    }
-  };
-  
-  const loadMyItems = async () => {
-    const token = localStorage.getItem("token");
-  
-    if (!token) {
+  const search = document.getElementById("searchInput").value;
+  const status = document.getElementById("statusFilter").value;
+  const resolved = document.getElementById("resolvedFilter").value;
+  const category = document.getElementById("categoryFilter").value;
+  const params = new URLSearchParams();
+
+  if (search) {
+    params.append("search", search);
+  }
+
+  if (status) {
+    params.append("status", status);
+  }
+
+  if (resolved) {
+    params.append("resolved", resolved);
+  }
+
+  if (category) {
+    params.append("category", category);
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/items?${params.toString()}`);
+    const items = await response.json();
+
+    if (!response.ok) {
+      itemsList.innerHTML = `<p class="empty-text">${items.message || "Could not load items"}</p>`;
       return;
     }
-  
-    try {
-      const response = await fetch(`${API_BASE_URL}/items/my`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-  
-      const items = await response.json();
-  
-      if (!response.ok) {
-        myItemsList.innerHTML = `<p class="empty-text">${items.message || "Could not load your posts"}</p>`;
-        return;
+
+    renderItems(items);
+  } catch (error) {
+    itemsList.innerHTML = '<p class="empty-text">Cannot connect to server</p>';
+  }
+};
+
+const loadMyItems = async () => {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/items/my`, {
+      headers: {
+        Authorization: `Bearer ${token}`
       }
-  
-      renderItems(items, myItemsList, true);
-    } catch (error) {
-      myItemsList.innerHTML = '<p class="empty-text">Cannot connect to server</p>';
-    }
-  };
-  
-  const deleteMyItem = async (itemId) => {
-    const token = localStorage.getItem("token");
-  
-    if (!token) {
+    });
+
+    const items = await response.json();
+
+    if (!response.ok) {
+      myItemsList.innerHTML = `<p class="empty-text">${items.message || "Could not load your posts"}</p>`;
       return;
     }
-  
-    try {
-      const response = await fetch(`${API_BASE_URL}/items/${itemId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-  
-      const data = await response.json();
-  
-      if (!response.ok) {
-        alert(data.message || "Could not delete item");
-        return;
+
+    renderItems(items, myItemsList, true);
+  } catch (error) {
+    myItemsList.innerHTML = '<p class="empty-text">Cannot connect to server</p>';
+  }
+};
+
+const deleteMyItem = async (itemId) => {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/items/${itemId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`
       }
-  
-      loadItems();
-      loadMyItems();
-    } catch (error) {
-      alert("Cannot connect to server");
-    }
-  };
-  
-  const toggleResolved = async (itemId) => {
-    const token = localStorage.getItem("token");
-  
-    if (!token) {
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      alert(data.message || "Could not delete item");
       return;
     }
-  
-    try {
-      const response = await fetch(`${API_BASE_URL}/items/${itemId}/resolve`, {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-  
-      const data = await response.json();
-  
-      if (!response.ok) {
-        alert(data.message || "Could not update item");
-        return;
+
+    loadItems();
+    loadMyItems();
+  } catch (error) {
+    alert("Cannot connect to server");
+  }
+};
+
+const toggleResolved = async (itemId) => {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/items/${itemId}/resolve`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`
       }
-  
-      loadItems();
-      loadMyItems();
-    } catch (error) {
-      alert("Cannot connect to server");
-    }
-  };
-  
-  const renderItems = (items, targetElement = itemsList, showDelete = false) => {
-    if (items.length === 0) {
-      targetElement.innerHTML = '<p class="empty-text">No items found.</p>';
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      alert(data.message || "Could not update item");
       return;
     }
-  
-    targetElement.innerHTML = items
-      .map((item) => {
-        const postedBy = item.postedBy || {};
-        const status = escapeHTML(item.status);
-        const progressText = item.isResolved ? "resolved" : "active";
-        const toggleText = item.isResolved ? "Mark Active" : "Mark Resolved";
-        const deleteButton = showDelete
-          ? `
+
+    loadItems();
+    loadMyItems();
+  } catch (error) {
+    alert("Cannot connect to server");
+  }
+};
+
+const renderItems = (items, targetElement = itemsList, showDelete = false) => {
+  if (items.length === 0) {
+    targetElement.innerHTML = '<p class="empty-text">No items found.</p>';
+    return;
+  }
+
+  targetElement.innerHTML = items
+    .map((item) => {
+      const postedBy = item.postedBy || {};
+      const status = escapeHTML(item.status);
+      const progressText = item.isResolved ? "resolved" : "active";
+      const toggleText = item.isResolved ? "Mark Active" : "Mark Resolved";
+      const deleteButton = showDelete
+        ? `
             <button class="success-btn resolve-item-btn" data-id="${escapeHTML(item._id)}" type="button">${toggleText}</button>
             <button class="danger-btn delete-item-btn" data-id="${escapeHTML(item._id)}" type="button">Delete Post</button>
           `
-          : "";
-  
-        return `
+        : "";
+
+      return `
           <article class="item-card">
             <h3>${escapeHTML(item.title)}</h3>
             <p>${escapeHTML(item.description)}</p>
@@ -386,24 +386,23 @@ const loadItems = async () => {
             ${deleteButton}
           </article>
         `;
-      })
-      .join("");
-  
-    if (showDelete) {
-      targetElement.querySelectorAll(".resolve-item-btn").forEach((button) => {
-        button.addEventListener("click", () => {
-          toggleResolved(button.dataset.id);
-        });
+    })
+    .join("");
+
+  if (showDelete) {
+    targetElement.querySelectorAll(".resolve-item-btn").forEach((button) => {
+      button.addEventListener("click", () => {
+        toggleResolved(button.dataset.id);
       });
-  
-      targetElement.querySelectorAll(".delete-item-btn").forEach((button) => {
-        button.addEventListener("click", () => {
-          deleteMyItem(button.dataset.id);
-        });
+    });
+
+    targetElement.querySelectorAll(".delete-item-btn").forEach((button) => {
+      button.addEventListener("click", () => {
+        deleteMyItem(button.dataset.id);
       });
-    }
-  };
-  
-  setMaxItemDate();
-  updateUserPanel();
-  
+    });
+  }
+};
+
+setMaxItemDate();
+updateUserPanel();
